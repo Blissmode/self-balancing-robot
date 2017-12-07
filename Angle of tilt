@@ -1,0 +1,60 @@
+#include <Wire.h>
+
+const int leftpin1=8,leftpin2=7,rightpin1=6,rightpin2=5;
+const int en1=4,en2=3;
+const int some1=3,some2=4;
+int input,kp=10000;
+
+const int MPU_addr=0x68;  // I2C address of the MPU-6050
+int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
+double angle1,angle2;
+
+void setup() 
+{
+ pinMode(leftpin1,OUTPUT);
+ pinMode(rightpin1,OUTPUT);
+ pinMode(leftpin2,OUTPUT);
+ pinMode(rightpin2,OUTPUT);  
+ pinMode(en1,OUTPUT);
+ pinMode(en2,OUTPUT);  
+
+ digitalWrite(en1,HIGH);
+ digitalWrite(en2,HIGH);  
+
+  Wire.begin();
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);     // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+  Serial.begin(9600);
+}
+
+
+
+
+void loop()
+{
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_addr,14,true);  // request a total of 14 registers
+  AcX=Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)    
+  AcY=Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+  AcZ=Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+  Tmp=Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
+  GyX=Wire.read()<<8|Wire.read();  // 0x43 (GYRO_XOUT_H) & 0x44 (GYRO_XOUT_L)
+  GyY=Wire.read()<<8|Wire.read();  // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
+  GyZ=Wire.read()<<8|Wire.read();  // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
+  Serial.print("AcX = "); Serial.print(AcX);
+  Serial.print(" | AcY = "); Serial.print(AcY);
+  Serial.print(" | AcZ = "); Serial.print(AcZ);
+  //Serial.print(" | Tmp = "); Serial.print(Tmp/340.00+36.53);  //equation for temperature in degrees C from datasheet
+  //Serial.print(" | GyX = "); Serial.print(GyX);
+  //Serial.print(" | GyY = "); Serial.print(GyY);
+  // Serial.print(" | GyZ = "); Serial.println(GyZ);
+  angle1=atan2(AcX, AcZ)*57.3248;
+  angle2=atan2(AcY, AcZ)*57.3248;        //redundant one
+  Serial.print(" | Angle1 = "); Serial.print(angle1);
+  Serial.print(" | Angle2 = "); Serial.println(angle2);  
+
+} 
